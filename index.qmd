@@ -1,0 +1,9 @@
+---
+title: "Jackson Fraser"
+listing:
+  contents: posts
+  sort: "date desc"
+  type: default
+  fields: [date, title, description, reading-time]
+page-layout: full
+---

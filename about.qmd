@@ -1,0 +1,19 @@
+---
+title: "About"
+about:
+  template: jolla
+  links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://linkedin.com/in/jacksonjfraser
+    - icon: github
+      text: Github
+      href: https://github.com/jacksonfraser-aero
+
+---
+
+I'm an Aeronautical Engineering student at the University of Glasgow (BEng Hons, 2028), interested in quantitative finance and markets. I write here about my projects — mostly statistics, simulation, and decision-making under uncertainty.
+
+Currently: Kelly-criterion betting simulator exploring reinforcement learning
+
+[GitHub](https://github.com/jacksonfraser-aero) · [LinkedIn](https://www.linkedin.com/in/jacksonjfraser)

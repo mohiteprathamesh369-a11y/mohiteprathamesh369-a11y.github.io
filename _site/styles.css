@@ -1,0 +1,17 @@
+/* tighter, more serious headings */
+h1, h2, h3 {
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* code blocks: slightly smaller, no visual shouting */
+pre {
+  font-size: 0.85em;
+  border-radius: 6px;
+}
+
+/* regression tables etc. — monospace output shouldn't overflow */
+.cell-output pre {
+  font-size: 0.78em;
+  overflow-x: auto;
+}

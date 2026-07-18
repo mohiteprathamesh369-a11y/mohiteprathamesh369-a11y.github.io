@@ -1,0 +1,30 @@
+project:
+  type: website
+
+website:
+  favicon: favicon.png
+  title: "Jackson Fraser"
+  navbar:
+    right:
+      - about.qmd
+      - icon: github
+        href: https://github.com/jacksonfraser-aero
+      - icon: linkedin
+        href: https://www.linkedin.com/in/jacksonjfraser
+format:
+  html:
+    theme:
+      - zephyr
+    css: styles.css
+    code-fold: true
+    code-summary: "show code"
+    code-tools: true
+    toc: true
+    grid: 
+     body-width: 800px
+
+
+
+
+
+
