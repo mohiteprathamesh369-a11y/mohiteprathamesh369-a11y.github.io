@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-07-18">
+<meta name="description" content="Monte Carlo simulation of bankroll growth, risk of ruin, and why practitioners bet less than the maths says.">
+
+<title>How Much Should You Bet? The Kelly Criterion, Simulated – Jackson Fraser</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-1c2b39b91d62c1bd2d977d21438fc985.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Jackson Fraser</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/jacksonfraser-aero"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/jacksonjfraser"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <div class="quarto-title-block"><div><h1 class="title">How Much Should You Bet? The Kelly Criterion, Simulated</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+                  <div>
+        <div class="description">
+          Monte Carlo simulation of bankroll growth, risk of ruin, and why practitioners bet less than the maths says.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">python</div>
+                <div class="quarto-category">simulation</div>
+                <div class="quarto-category">betting</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">July 18, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#motivation" id="toc-motivation" class="nav-link" data-scroll-target="#motivation">Motivation</a></li>
+  <li><a href="#section-1-bet-sizing" id="toc-section-1-bet-sizing" class="nav-link" data-scroll-target="#section-1-bet-sizing">Section 1: Bet sizing</a>
+  <ul class="collapse">
+  <li><a href="#the-kelly-criterion-with-a-known-edge" id="toc-the-kelly-criterion-with-a-known-edge" class="nav-link" data-scroll-target="#the-kelly-criterion-with-a-known-edge">The Kelly criterion with a known edge</a></li>
+  <li><a href="#kelly-with-an-estimated-edge" id="toc-kelly-with-an-estimated-edge" class="nav-link" data-scroll-target="#kelly-with-an-estimated-edge">Kelly with an estimated edge</a></li>
+  </ul></li>
+  <li><a href="#section-2-market-making-against-informed-flow" id="toc-section-2-market-making-against-informed-flow" class="nav-link" data-scroll-target="#section-2-market-making-against-informed-flow">Section 2: Market making against informed flow</a>
+  <ul class="collapse">
+  <li><a href="#the-game" id="toc-the-game" class="nav-link" data-scroll-target="#the-game">The game</a></li>
+  <li><a href="#the-cost-of-not-listening" id="toc-the-cost-of-not-listening" class="nav-link" data-scroll-target="#the-cost-of-not-listening">The cost of not listening</a></li>
+  <li><a href="#strategies-that-listen" id="toc-strategies-that-listen" class="nav-link" data-scroll-target="#strategies-that-listen">Strategies that listen</a></li>
+  </ul></li>
+  <li><a href="#section-3-a-reinforcement-learning-market-maker" id="toc-section-3-a-reinforcement-learning-market-maker" class="nav-link" data-scroll-target="#section-3-a-reinforcement-learning-market-maker">Section 3: A reinforcement-learning market maker</a>
+  <ul class="collapse">
+  <li><a href="#problem-formulation" id="toc-problem-formulation" class="nav-link" data-scroll-target="#problem-formulation">Problem formulation</a></li>
+  <li><a href="#algorithm" id="toc-algorithm" class="nav-link" data-scroll-target="#algorithm">Algorithm</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  </ul></li>
+  <li><a href="#discussion-and-limitations" id="toc-discussion-and-limitations" class="nav-link" data-scroll-target="#discussion-and-limitations">Discussion and limitations</a></li>
+  <li><a href="#future-work" id="toc-future-work" class="nav-link" data-scroll-target="#future-work">Future work</a></li>
+  <li><a href="#reproducibility" id="toc-reproducibility" class="nav-link" data-scroll-target="#reproducibility">Reproducibility</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="abstract" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This project studies two connected problems in quantitative decision-making. The first is <strong>bet sizing</strong>: given a repeated favourable bet, what fraction of wealth should be staked, and how does the answer change when the bettor’s edge is estimated rather than known? The second is <strong>market making</strong>: how should a dealer quote bid and ask prices for an asset of unknown value when some counterparties are better informed, and can a model-free reinforcement-learning agent recover a good quoting policy from the order flow alone? All results are produced by Monte Carlo simulation in Python (numpy), with a fully unit-tested codebase (40 tests) and reproducible, seeded experiments. Headline findings: (i) estimation noise and bias push optimal bet sizing materially below full Kelly, quantifying the practitioner’s preference for fractional Kelly; (ii) a fixed-spread market maker’s losses to informed flow are structural, not unlucky, and a Bayesian maker that treats every fill <em>and every pass</em> as evidence remains profitable even when 60% of traders are informed; and (iii) a tabular Q-learning agent observing only four coarse features recovers roughly half of the performance gap between a never-adapting maker and the full-information Bayesian benchmark.</p>
+</section>
+<section id="motivation" class="level2">
+<h2 class="anchored" data-anchor-id="motivation">Motivation</h2>
+<p>Both halves of the project are simplified models of real trading problems. Position sizing under estimated edges is the daily reality of any systematic strategy: backtests yield estimates, not truths, and the asymmetry of compounding means the cost of over-sizing exceeds the benefit of equivalent under-sizing. Market making against potentially informed flow is the canonical microstructure problem [Glosten &amp; Milgrom, 1985]: the act of being traded with is itself information, because informed counterparties select when to trade. The project builds both models from first principles, verifies theory by simulation, and finishes by asking whether the market-making insight can be <em>learned</em> rather than derived.</p>
+</section>
+<section id="section-1-bet-sizing" class="level2">
+<h2 class="anchored" data-anchor-id="section-1-bet-sizing">Section 1: Bet sizing</h2>
+<section id="the-kelly-criterion-with-a-known-edge" class="level3">
+<h3 class="anchored" data-anchor-id="the-kelly-criterion-with-a-known-edge">The Kelly criterion with a known edge</h3>
+<p>For a binary bet with win probability <span class="math inline">\(p\)</span>, loss probability <span class="math inline">\(q = 1-p\)</span>, and net fractional odds <span class="math inline">\(b\)</span> (a winning one-unit stake returns <span class="math inline">\(b\)</span> units of profit), betting a fixed fraction <span class="math inline">\(f\)</span> of bankroll each round gives an expected log-growth per bet of</p>
+<p><span class="math display">\[
+g(f) = p\,\ln(1 + bf) + q\,\ln(1 - f).
+\]</span></p>
+<p>Maximising <span class="math inline">\(g\)</span> yields the Kelly fraction</p>
+<p><span class="math display">\[
+f^\* = \frac{bp - q}{b},
+\]</span></p>
+<p>which for the study’s canonical bet (<span class="math inline">\(p = 0.55\)</span>, even odds <span class="math inline">\(b = 1\)</span>) gives <span class="math inline">\(f^\* = 0.10\)</span>.</p>
+<p>Simulating 20,000 bankroll paths over 1,000 bets:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 26%">
+<col style="width: 26%">
+<col style="width: 26%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Strategy</th>
+<th style="text-align: right;">Median final bankroll</th>
+<th style="text-align: right;">Mean final bankroll</th>
+<th style="text-align: right;">P(losing &gt;50%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fixed 2%</td>
+<td style="text-align: right;">6.05</td>
+<td style="text-align: right;">7.41</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td>Half Kelly (<span class="math inline">\(f=0.05\)</span>)</td>
+<td style="text-align: right;">42.6</td>
+<td style="text-align: right;">142</td>
+<td style="text-align: right;">0.003</td>
+</tr>
+<tr class="odd">
+<td>Full Kelly (<span class="math inline">\(f=0.10\)</span>)</td>
+<td style="text-align: right;">150</td>
+<td style="text-align: right;">15,006</td>
+<td style="text-align: right;">0.037</td>
+</tr>
+<tr class="even">
+<td>Double Kelly (<span class="math inline">\(f=0.20\)</span>)</td>
+<td style="text-align: right;"><strong>0.87</strong></td>
+<td style="text-align: right;">23.9M</td>
+<td style="text-align: right;"><strong>0.457</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Three observations. Full Kelly maximises <em>median</em> growth, as theory predicts. Double Kelly sits almost exactly at the zero-growth crossing of <span class="math inline">\(g(f)\)</span>: its median path goes nowhere while its <em>mean</em> explodes, because the mean of a multiplicative process is dominated by a vanishing set of lucky paths — a concrete demonstration that expected wealth is the wrong objective for compounded betting. And half Kelly concedes surprisingly little growth for a large reduction in drawdown risk, foreshadowing the next result.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/growth_curve.png" class="img-fluid figure-img"></p>
+<figcaption>Expected log-growth versus bet fraction. The curve is asymmetric about its peak: over-betting is punished more severely than under-betting.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/bankroll_paths.png" class="img-fluid figure-img"></p>
+<figcaption>Median bankroll paths by betting fraction (log scale).</figcaption>
+</figure>
+</div>
+</section>
+<section id="kelly-with-an-estimated-edge" class="level3">
+<h3 class="anchored" data-anchor-id="kelly-with-an-estimated-edge">Kelly with an estimated edge</h3>
+<p>Real bettors estimate <span class="math inline">\(p\)</span>. The study models a bettor who observes <span class="math inline">\(n\)</span> historical outcomes, forms the sample win rate <span class="math inline">\(\hat p\)</span>, and bets <span class="math inline">\(m \times f^\*(\hat p)\)</span> — a <em>Kelly multiplier</em> <span class="math inline">\(m\)</span> applied to the Kelly fraction of the estimate — against the true <span class="math inline">\(p\)</span>.</p>
+<p><strong>Noise.</strong> Sweeping <span class="math inline">\(m\)</span> for several history lengths, the growth-maximising multiplier falls as the estimate degrades:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Estimate quality</th>
+<th style="text-align: right;">Best multiplier</th>
+<th style="text-align: right;">Growth at best</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Known edge (theory)</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">0.00501</td>
+</tr>
+<tr class="even">
+<td>Estimated from 1,000 bets</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">0.00459</td>
+</tr>
+<tr class="odd">
+<td>Estimated from 200 bets</td>
+<td style="text-align: right;">0.65</td>
+<td style="text-align: right;">0.00360</td>
+</tr>
+<tr class="even">
+<td>Estimated from 50 bets</td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">0.00263</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bias.</strong> A bettor who believes <span class="math inline">\(p = 0.55\)</span> when the truth is <span class="math inline">\(0.52\)</span> — three points of overconfidence, easily produced by backtest overfitting — realises <em>negative</em> growth (<span class="math inline">\(-0.0035\)</span> per bet) at full Kelly on the believed edge, while <span class="math inline">\(m \approx 0.3\)</span> remains profitable.</p>
+<p>The mechanism is the asymmetry of <span class="math inline">\(g(f)\)</span> visible in the growth-curve figure: errors that push <span class="math inline">\(f\)</span> beyond the peak cost more than equal errors short of it, so uncertainty shifts the optimum toward conservatism. This is the quantitative content of the practitioner’s rule “bet fractional Kelly.”</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/noisy_edge_multiplier.png" class="img-fluid figure-img"></p>
+<figcaption>Realised growth versus Kelly multiplier under estimation noise.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/biased_edge_multiplier.png" class="img-fluid figure-img"></p>
+<figcaption>An optimistic edge estimate makes full Kelly destructive.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="section-2-market-making-against-informed-flow" class="level2">
+<h2 class="anchored" data-anchor-id="section-2-market-making-against-informed-flow">Section 2: Market making against informed flow</h2>
+<section id="the-game" class="level3">
+<h3 class="anchored" data-anchor-id="the-game">The game</h3>
+<p>A hidden value <span class="math inline">\(V\)</span> is the sum of three dice (<span class="math inline">\(V \in \{3,\dots,18\}\)</span>, mean <span class="math inline">\(10.5\)</span>). Each round a market maker quotes a bid and an ask; one trader arrives. With probability <span class="math inline">\(1-\phi\)</span> the trader is a <em>noise trader</em> who buys or sells at random; with probability <span class="math inline">\(\phi\)</span> they are <em>informed</em>, observing <span class="math inline">\(V + \varepsilon\)</span> with <span class="math inline">\(\varepsilon \sim \mathcal N(0, \sigma^2)\)</span>, buying if their signal exceeds the ask, selling if below the bid, and passing otherwise. All positions settle at <span class="math inline">\(V\)</span> after 100 rounds.</p>
+<p>The maker’s economics decompose cleanly: noise traders pay the half-spread on every fill regardless of price level (revenue), while informed traders fill only when the quotes are wrong, transferring the mispricing to themselves (cost). This selective participation is <strong>adverse selection</strong>, and it is asymmetric in a way the simulation makes vivid: informed traders are absent from the fill stream precisely when the maker is priced correctly.</p>
+</section>
+<section id="the-cost-of-not-listening" class="level3">
+<h3 class="anchored" data-anchor-id="the-cost-of-not-listening">The cost of not listening</h3>
+<p>A naive maker quoting a fixed <span class="math inline">\(\pm 1.0\)</span> spread around the prior mean, across 2,000 games:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Informed share</th>
+<th style="text-align: right;">Mean P&amp;L</th>
+<th style="text-align: right;">Median P&amp;L</th>
+<th style="text-align: right;">P(loss)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">98.4</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: right;">0.005</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30%</td>
+<td style="text-align: right;">27.7</td>
+<td style="text-align: right;">45.5</td>
+<td style="text-align: right;">0.255</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;"><strong>-48.4</strong></td>
+<td style="text-align: right;">-24.0</td>
+<td style="text-align: right;">0.533</td>
+</tr>
+</tbody>
+</table>
+<p>In the example game plotted below, <span class="math inline">\(V = 3\)</span> — far below the prior — and informed traders sell into the maker’s bid for the entire game while it never updates. The loss is structural.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/example_game.png" class="img-fluid figure-img"></p>
+<figcaption>A single game with <span class="math inline">\(V=3\)</span>: the naive maker accumulates a long position at prices far above value.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/informed_share_sweep.png" class="img-fluid figure-img"></p>
+<figcaption>Final P&amp;L distribution versus informed share for the naive maker.</figcaption>
+</figure>
+</div>
+</section>
+<section id="strategies-that-listen" class="level3">
+<h3 class="anchored" data-anchor-id="strategies-that-listen">Strategies that listen</h3>
+<p>Two upgrades were implemented and raced on identical market conditions:</p>
+<ul>
+<li><strong>Inventory-aware</strong>: quote centre <span class="math inline">\(= 10.5 - \kappa \times\)</span> inventory. Position control with no learning.</li>
+<li><strong>Bayesian</strong>: a discrete posterior over <span class="math inline">\(V\)</span>, updated after <em>every</em> event using the game’s known structure. The likelihoods are, for candidate value <span class="math inline">\(v\)</span> and quotes <span class="math inline">\((\text{bid}, \text{ask})\)</span>:</li>
+</ul>
+<p><span class="math display">\[
+\begin{aligned}
+P(\text{buy} \mid v) &amp;= \tfrac{1-\phi}{2} + \phi\,\Pr(v + \varepsilon &gt; \text{ask}) \\
+P(\text{sell} \mid v) &amp;= \tfrac{1-\phi}{2} + \phi\,\Pr(v + \varepsilon &lt; \text{bid}) \\
+P(\text{pass} \mid v) &amp;= \phi\,\Pr(\text{bid} \le v + \varepsilon \le \text{ask})
+\end{aligned}
+\]</span></p>
+<p>Noise traders never pass, so a pass is <em>pure signal</em> that <span class="math inline">\(V\)</span> lies inside the spread — an observation with no analogue in fill-only models, and one the convergence figure shows the maker exploiting.</p>
+<p>Tournament results (1,500 games per point):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Informed share</th>
+<th style="text-align: right;">Naive</th>
+<th style="text-align: right;">Inventory-aware</th>
+<th style="text-align: right;">Bayesian</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">98.0</td>
+<td style="text-align: right;">98.4</td>
+<td style="text-align: right;">98.6</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30%</td>
+<td style="text-align: right;">27.3</td>
+<td style="text-align: right;">60.2</td>
+<td style="text-align: right;">68.2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;"><strong>-46.2</strong></td>
+<td style="text-align: right;">41.0</td>
+<td style="text-align: right;"><strong>48.4</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The same flow that bleeds the naive maker <em>funds</em> the Bayesian one with information.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/strategy_tournament.png" class="img-fluid figure-img"></p>
+<figcaption>Strategy tournament: adaptive quoting neutralises adverse selection.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/bayesian_convergence.png" class="img-fluid figure-img"></p>
+<figcaption>The Bayesian maker’s posterior mean homing in on <span class="math inline">\(V=3\)</span> from the flow alone.</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="section-3-a-reinforcement-learning-market-maker" class="level2">
+<h2 class="anchored" data-anchor-id="section-3-a-reinforcement-learning-market-maker">Section 3: A reinforcement-learning market maker</h2>
+<section id="problem-formulation" class="level3">
+<h3 class="anchored" data-anchor-id="problem-formulation">Problem formulation</h3>
+<p>The scientific question: can a model-free agent, denied the game’s structure (<span class="math inline">\(\phi\)</span>, <span class="math inline">\(\sigma\)</span>, even the existence of informed traders), learn a quoting policy from experience? Because <span class="math inline">\(V\)</span> is hidden, the problem is a <strong>partially observable MDP</strong>; the theoretically sufficient state is the belief distribution over <span class="math inline">\(V\)</span>, which is exactly what the Bayesian maker tracks. The agent is instead given a deliberately crude, hand-crafted summary of history:</p>
+<ol type="1">
+<li><strong>flow imbalance</strong> (buys minus sells so far) — the human player’s “which side keeps getting hit” signal;</li>
+<li><strong>quote-centre offset</strong> from the prior — without which imbalance is uninterpretable, since it cannot be known whether the imbalance has already been responded to;</li>
+<li><strong>inventory</strong> — settlement risk;</li>
+<li><strong>a coarse game clock</strong> — early rounds reward information gathering, late rounds punish open positions.</li>
+</ol>
+<p>Each feature is discretised (bins <span class="math inline">\(7 \times 7 \times 5 \times 3\)</span>), and the action space is five discrete quote-centre moves <span class="math inline">\(\{-1.0, -0.5, 0, +0.5, +1.0\}\)</span> at a fixed <span class="math inline">\(\pm 1.0\)</span> spread. The reward is the per-fill mispricing (<span class="math inline">\(\text{ask} - V\)</span> on a sale, <span class="math inline">\(V - \text{bid}\)</span> on a purchase), which telescopes exactly to the settled P&amp;L — a property pinned by a unit test. <span class="math inline">\(V\)</span> appears in the reward <em>computation</em> during training but never in the observation: the standard training-signal/input distinction.</p>
+</section>
+<section id="algorithm" class="level3">
+<h3 class="anchored" data-anchor-id="algorithm">Algorithm</h3>
+<p>Tabular Q-learning [Watkins, 1989]: maintain <span class="math inline">\(Q(s,a)\)</span>, and after each transition <span class="math inline">\((s, a, r, s')\)</span> update</p>
+<p><span class="math display">\[
+Q(s,a) \leftarrow Q(s,a) + \alpha\left[r + \gamma \max_{a'} Q(s',a') - Q(s,a)\right],
+\]</span></p>
+<p>with <span class="math inline">\(\gamma = 1\)</span> (episodic task, monetary reward), <span class="math inline">\(\varepsilon\)</span>-greedy exploration decaying <span class="math inline">\(1.0 \to 0.05\)</span> over 60% of training, and terminal states bootstrapping zero. Q-learning is off-policy: the update targets the greedy policy’s value even while behaviour is exploratory.</p>
+<p>Evaluation discipline was enforced throughout: greedy-policy evaluation on held-out seed blocks disjoint from training seeds; <strong>best-checkpoint selection</strong> (motivated below); and final reporting on a third seed block untouched by either training or selection.</p>
+</section>
+<section id="results" class="level3">
+<h3 class="anchored" data-anchor-id="results">Results</h3>
+<p>A first 20,000-episode run with constant <span class="math inline">\(\alpha = 0.1\)</span> exhibited the characteristic instability of tabular Q-learning: evaluation oscillated between <span class="math inline">\(\approx 48\)</span> and <span class="math inline">\(\approx 18\)</span>, and the final-episode snapshot happened to score 20.7 — a bad snapshot of a decent agent. Halving <span class="math inline">\(\alpha\)</span> and keeping the best evaluated checkpoint produced a stable plateau and a final score of <strong>49.2 over 1,000 fresh held-out games</strong>, against a hold-still benchmark of <span class="math inline">\(\approx 29\)</span> and the Bayesian ceiling of <span class="math inline">\(\approx 68\)</span>: roughly half the naive-to-Bayesian gap recovered from four coarse features. State coverage was 29% of bins; most extreme feature combinations are unreachable in 100-round games.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/rl_learning_curve.png" class="img-fluid figure-img"></p>
+<figcaption>Learning curve: evaluation P&amp;L versus training episodes, with naive and Bayesian benchmarks.</figcaption>
+</figure>
+</div>
+<p>Entered in the tournament via a thin adapter (the frozen table wrapped in the MarketMaker interface, reconstructing its observation from its own fill stream), and noting the agent was trained <em>only</em> at <span class="math inline">\(\phi = 0.3\)</span>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Informed share</th>
+<th style="text-align: right;">Naive</th>
+<th style="text-align: right;">Inventory-aware</th>
+<th style="text-align: right;">Bayesian</th>
+<th style="text-align: right;">RL (tabular Q)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">98.0</td>
+<td style="text-align: right;">98.4</td>
+<td style="text-align: right;">98.6</td>
+<td style="text-align: right;">97.9</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30%</td>
+<td style="text-align: right;">27.3</td>
+<td style="text-align: right;">60.2</td>
+<td style="text-align: right;">68.2</td>
+<td style="text-align: right;">50.7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;">-46.2</td>
+<td style="text-align: right;">41.0</td>
+<td style="text-align: right;">48.4</td>
+<td style="text-align: right;">15.3</td>
+</tr>
+</tbody>
+</table>
+<p>The agent beats the naive maker everywhere and remains profitable at 60% informed flow, where the naive maker loses heavily. It does <strong>not</strong> overtake the hand-designed inventory-aware heuristic: at this scale of state space and training budget, a good inductive bias is hard to out-learn. Its out-of-distribution decay (trained at 30%, weaker at the extremes) is visible and expected.</p>
+</section>
+</section>
+<section id="discussion-and-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="discussion-and-limitations">Discussion and limitations</h2>
+<p>Three threads tie the sections together. First, <em>information asymmetry has a price and a location</em>: in the betting studies it appears as the cost of acting on estimates as if they were truths; in market making it appears as adverse selection. Second, <em>the asymmetry of losses dictates conservatism</em>: the concavity of log-growth and the one-sidedness of informed flow both mean errors are not symmetric, so optimal behaviour backs away from the frictionless optimum. Third, <em>listening is worth money</em>: the gap between the naive and Bayesian makers, and the RL agent’s ability to close half of it from crude features, are both measurements of the value of information in the order flow.</p>
+<p>Limitations, stated plainly: the game is stationary within an episode (no news, no drifting <span class="math inline">\(V\)</span>); trader arrival is one-per-round with unit size; the Bayesian maker is given the true <span class="math inline">\(\phi\)</span> and <span class="math inline">\(\sigma\)</span>, making its benchmark a ceiling rather than a fair competitor; the RL agent’s features are hand-crafted, its discretisation coarse, and it was trained at a single informed share. The betting studies assume binary independent bets; correlated simultaneous bets (portfolio Kelly) remain on the roadmap.</p>
+</section>
+<section id="future-work" class="level2">
+<h2 class="anchored" data-anchor-id="future-work">Future work</h2>
+<p>Policy inspection (heatmaps of the learned greedy action over imbalance-by-centre slices, compared with the Bayesian maker’s behaviour); ablations (sparse versus dense reward; removing the flow-imbalance feature, which should collapse the agent to inventory management); a DQN on the identical environment via stable-baselines3, relaxing the discretisation; an adaptive Bayesian maker that infers <span class="math inline">\(\phi\)</span> online; and the portfolio Kelly extension connecting Section 1 to multi-asset allocation.</p>
+</section>
+<section id="reproducibility" class="level2">
+<h2 class="anchored" data-anchor-id="reproducibility">Reproducibility</h2>
+<p>All experiments are seeded scripts in <code>scripts/</code>; all figures in this document are their direct outputs. The full test suite (40 tests) runs with <code>python -m pytest</code>. Code: <code>github.com/jacksonfraser-aero/kelly-betting-simulator</code>.</p>
+</section>
+<section id="references" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Kelly, J. L. (1956). <em>A New Interpretation of Information Rate.</em> Bell System Technical Journal.</li>
+<li>Thorp, E. O. (2006). <em>The Kelly Criterion in Blackjack, Sports Betting, and the Stock Market.</em></li>
+<li>MacLean, L., Thorp, E. O., &amp; Ziemba, W. (2011). <em>The Kelly Capital Growth Investment Criterion.</em> World Scientific.</li>
+<li>Glosten, L., &amp; Milgrom, P. (1985). <em>Bid, Ask and Transaction Prices in a Specialist Market with Heterogeneously Informed Traders.</em> Journal of Financial Economics.</li>
+<li>Watkins, C. (1989). <em>Learning from Delayed Rewards.</em> PhD thesis, Cambridge.</li>
+<li>Sutton, R., &amp; Barto, A. (2018). <em>Reinforcement Learning: An Introduction</em> (2nd ed.). MIT Press.</li>
+</ul>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/jacksonfraser-aero\.github\.io\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "How Much Should You Bet? The Kelly Criterion, Simulated"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> 2026-07-18</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="an">categories:</span><span class="co"> [python, simulation, betting]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> "Monte Carlo simulation of bankroll growth, risk of ruin, and why practitioners bet less than the maths says."</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">## Abstract {.unnumbered}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>This project studies two connected problems in quantitative decision-making.</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>The first is **bet sizing**: given a repeated favourable bet, what fraction of</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>wealth should be staked, and how does the answer change when the bettor's edge</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>is estimated rather than known? The second is **market making**: how should a</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>dealer quote bid and ask prices for an asset of unknown value when some</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>counterparties are better informed, and can a model-free reinforcement-learning</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>agent recover a good quoting policy from the order flow alone? All results are</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>produced by Monte Carlo simulation in Python (numpy), with a fully unit-tested</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>codebase (40 tests) and reproducible, seeded experiments. Headline findings:</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>(i) estimation noise and bias push optimal bet sizing materially below full</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>Kelly, quantifying the practitioner's preference for fractional Kelly; (ii) a</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>fixed-spread market maker's losses to informed flow are structural, not</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>unlucky, and a Bayesian maker that treats every fill *and every pass* as</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>evidence remains profitable even when 60% of traders are informed; and (iii) a</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>tabular Q-learning agent observing only four coarse features recovers roughly</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>half of the performance gap between a never-adapting maker and the</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>full-information Bayesian benchmark.</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">## Motivation</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>Both halves of the project are simplified models of real trading problems.</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>Position sizing under estimated edges is the daily reality of any systematic</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>strategy: backtests yield estimates, not truths, and the asymmetry of</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>compounding means the cost of over-sizing exceeds the benefit of equivalent</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>under-sizing. Market making against potentially informed flow is the canonical</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>microstructure problem <span class="co">[</span><span class="ot">Glosten &amp; Milgrom, 1985</span><span class="co">]</span>: the act of being traded with</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>is itself information, because informed counterparties select when to trade.</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>The project builds both models from first principles, verifies theory by</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>simulation, and finishes by asking whether the market-making insight can be</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>*learned* rather than derived.</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="fu">## Section 1: Bet sizing</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="fu">### The Kelly criterion with a known edge</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>For a binary bet with win probability $p$, loss probability $q = 1-p$, and net</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>fractional odds $b$ (a winning one-unit stake returns $b$ units of profit),</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>betting a fixed fraction $f$ of bankroll each round gives an expected</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>log-growth per bet of</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>g(f) = p\,\ln(1 + bf) + q\,\ln(1 - f).</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>Maximising $g$ yields the Kelly fraction</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>f^<span class="sc">\*</span> = \frac{bp - q}{b},</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>which for the study's canonical bet ($p = 0.55$, even odds $b = 1$) gives</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>$f^<span class="sc">\*</span> = 0.10$.</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>Simulating 20,000 bankroll paths over 1,000 bets:</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Strategy <span class="pp">|</span> Median final bankroll <span class="pp">|</span> Mean final bankroll <span class="pp">|</span> P(losing &gt;50%) <span class="pp">|</span></span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---:|---:|---:|</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Fixed 2% <span class="pp">|</span> 6.05 <span class="pp">|</span> 7.41 <span class="pp">|</span> 0.000 <span class="pp">|</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Half Kelly ($f=0.05$) <span class="pp">|</span> 42.6 <span class="pp">|</span> 142 <span class="pp">|</span> 0.003 <span class="pp">|</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Full Kelly ($f=0.10$) <span class="pp">|</span> 150 <span class="pp">|</span> 15,006 <span class="pp">|</span> 0.037 <span class="pp">|</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Double Kelly ($f=0.20$) <span class="pp">|</span> **0.87** | 23.9M | **0.457** <span class="pp">|</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>Three observations. Full Kelly maximises *median* growth, as theory predicts.</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>Double Kelly sits almost exactly at the zero-growth crossing of $g(f)$: its</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>median path goes nowhere while its *mean* explodes, because the mean of a</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>multiplicative process is dominated by a vanishing set of lucky paths --- a</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>concrete demonstration that expected wealth is the wrong objective for</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>compounded betting. And half Kelly concedes surprisingly little growth for a</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>large reduction in drawdown risk, foreshadowing the next result.</span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>![Expected log-growth versus bet fraction. The curve is asymmetric about its</span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>peak: over-betting is punished more severely than</span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>under-betting.](figures/growth_curve.png)</span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>![Median bankroll paths by betting fraction (log</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>scale).](figures/bankroll_paths.png)</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a><span class="fu">### Kelly with an estimated edge</span></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>Real bettors estimate $p$. The study models a bettor who observes $n$</span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>historical outcomes, forms the sample win rate $\hat p$, and bets</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>$m \times f^<span class="sc">\*</span>(\hat p)$ --- a *Kelly multiplier* $m$ applied to the Kelly</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>fraction of the estimate --- against the true $p$.</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>**Noise.** Sweeping $m$ for several history lengths, the growth-maximising</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>multiplier falls as the estimate degrades:</span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Estimate quality <span class="pp">|</span> Best multiplier <span class="pp">|</span> Growth at best <span class="pp">|</span></span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---:|---:|</span></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Known edge (theory) <span class="pp">|</span> 1.00 <span class="pp">|</span> 0.00501 <span class="pp">|</span></span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Estimated from 1,000 bets <span class="pp">|</span> 0.90 <span class="pp">|</span> 0.00459 <span class="pp">|</span></span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Estimated from 200 bets <span class="pp">|</span> 0.65 <span class="pp">|</span> 0.00360 <span class="pp">|</span></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Estimated from 50 bets <span class="pp">|</span> 0.45 <span class="pp">|</span> 0.00263 <span class="pp">|</span></span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a>**Bias.** A bettor who believes $p = 0.55$ when the truth is $0.52$ ---</span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a>three points of overconfidence, easily produced by backtest overfitting ---</span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a>realises *negative* growth ($-0.0035$ per bet) at full Kelly on the believed</span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a>edge, while $m \approx 0.3$ remains profitable.</span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a>The mechanism is the asymmetry of $g(f)$ visible in the growth-curve figure:</span>
+<span id="cb1-110"><a href="#cb1-110" aria-hidden="true" tabindex="-1"></a>errors that push $f$ beyond the peak cost more than equal errors short of it,</span>
+<span id="cb1-111"><a href="#cb1-111" aria-hidden="true" tabindex="-1"></a>so uncertainty shifts the optimum toward conservatism. This is the</span>
+<span id="cb1-112"><a href="#cb1-112" aria-hidden="true" tabindex="-1"></a>quantitative content of the practitioner's rule "bet fractional Kelly."</span>
+<span id="cb1-113"><a href="#cb1-113" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-114"><a href="#cb1-114" aria-hidden="true" tabindex="-1"></a>![Realised growth versus Kelly multiplier under estimation</span>
+<span id="cb1-115"><a href="#cb1-115" aria-hidden="true" tabindex="-1"></a>noise.](figures/noisy_edge_multiplier.png)</span>
+<span id="cb1-116"><a href="#cb1-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-117"><a href="#cb1-117" aria-hidden="true" tabindex="-1"></a>![An optimistic edge estimate makes full Kelly</span>
+<span id="cb1-118"><a href="#cb1-118" aria-hidden="true" tabindex="-1"></a>destructive.](figures/biased_edge_multiplier.png)</span>
+<span id="cb1-119"><a href="#cb1-119" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-120"><a href="#cb1-120" aria-hidden="true" tabindex="-1"></a><span class="fu">## Section 2: Market making against informed flow</span></span>
+<span id="cb1-121"><a href="#cb1-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-122"><a href="#cb1-122" aria-hidden="true" tabindex="-1"></a><span class="fu">### The game</span></span>
+<span id="cb1-123"><a href="#cb1-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-124"><a href="#cb1-124" aria-hidden="true" tabindex="-1"></a>A hidden value $V$ is the sum of three dice ($V \in <span class="sc">\{</span>3,\dots,18<span class="sc">\}</span>$, mean</span>
+<span id="cb1-125"><a href="#cb1-125" aria-hidden="true" tabindex="-1"></a>$10.5$). Each round a market maker quotes a bid and an ask; one trader</span>
+<span id="cb1-126"><a href="#cb1-126" aria-hidden="true" tabindex="-1"></a>arrives. With probability $1-\phi$ the trader is a *noise trader* who buys or</span>
+<span id="cb1-127"><a href="#cb1-127" aria-hidden="true" tabindex="-1"></a>sells at random; with probability $\phi$ they are *informed*, observing</span>
+<span id="cb1-128"><a href="#cb1-128" aria-hidden="true" tabindex="-1"></a>$V + \varepsilon$ with $\varepsilon \sim \mathcal N(0, \sigma^2)$, buying if</span>
+<span id="cb1-129"><a href="#cb1-129" aria-hidden="true" tabindex="-1"></a>their signal exceeds the ask, selling if below the bid, and passing</span>
+<span id="cb1-130"><a href="#cb1-130" aria-hidden="true" tabindex="-1"></a>otherwise. All positions settle at $V$ after 100 rounds.</span>
+<span id="cb1-131"><a href="#cb1-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-132"><a href="#cb1-132" aria-hidden="true" tabindex="-1"></a>The maker's economics decompose cleanly: noise traders pay the half-spread on</span>
+<span id="cb1-133"><a href="#cb1-133" aria-hidden="true" tabindex="-1"></a>every fill regardless of price level (revenue), while informed traders fill</span>
+<span id="cb1-134"><a href="#cb1-134" aria-hidden="true" tabindex="-1"></a>only when the quotes are wrong, transferring the mispricing to themselves</span>
+<span id="cb1-135"><a href="#cb1-135" aria-hidden="true" tabindex="-1"></a>(cost). This selective participation is **adverse selection**, and it is</span>
+<span id="cb1-136"><a href="#cb1-136" aria-hidden="true" tabindex="-1"></a>asymmetric in a way the simulation makes vivid: informed traders are absent</span>
+<span id="cb1-137"><a href="#cb1-137" aria-hidden="true" tabindex="-1"></a>from the fill stream precisely when the maker is priced correctly.</span>
+<span id="cb1-138"><a href="#cb1-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-139"><a href="#cb1-139" aria-hidden="true" tabindex="-1"></a><span class="fu">### The cost of not listening</span></span>
+<span id="cb1-140"><a href="#cb1-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-141"><a href="#cb1-141" aria-hidden="true" tabindex="-1"></a>A naive maker quoting a fixed $\pm 1.0$ spread around the prior mean, across</span>
+<span id="cb1-142"><a href="#cb1-142" aria-hidden="true" tabindex="-1"></a>2,000 games:</span>
+<span id="cb1-143"><a href="#cb1-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-144"><a href="#cb1-144" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Informed share <span class="pp">|</span> Mean P&amp;L <span class="pp">|</span> Median P&amp;L <span class="pp">|</span> P(loss) <span class="pp">|</span></span>
+<span id="cb1-145"><a href="#cb1-145" aria-hidden="true" tabindex="-1"></a><span class="pp">|---:|---:|---:|---:|</span></span>
+<span id="cb1-146"><a href="#cb1-146" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 0% <span class="pp">|</span> 98.4 <span class="pp">|</span> 100.0 <span class="pp">|</span> 0.005 <span class="pp">|</span></span>
+<span id="cb1-147"><a href="#cb1-147" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 30% <span class="pp">|</span> 27.7 <span class="pp">|</span> 45.5 <span class="pp">|</span> 0.255 <span class="pp">|</span></span>
+<span id="cb1-148"><a href="#cb1-148" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 60% <span class="pp">|</span> **-48.4** <span class="pp">|</span> -24.0 <span class="pp">|</span> 0.533 <span class="pp">|</span></span>
+<span id="cb1-149"><a href="#cb1-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-150"><a href="#cb1-150" aria-hidden="true" tabindex="-1"></a>In the example game plotted below, $V = 3$ --- far below the prior --- and</span>
+<span id="cb1-151"><a href="#cb1-151" aria-hidden="true" tabindex="-1"></a>informed traders sell into the maker's bid for the entire game while it never</span>
+<span id="cb1-152"><a href="#cb1-152" aria-hidden="true" tabindex="-1"></a>updates. The loss is structural.</span>
+<span id="cb1-153"><a href="#cb1-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-154"><a href="#cb1-154" aria-hidden="true" tabindex="-1"></a>![A single game with $V=3$: the naive maker accumulates a long position at</span>
+<span id="cb1-155"><a href="#cb1-155" aria-hidden="true" tabindex="-1"></a>prices far above value.](figures/example_game.png)</span>
+<span id="cb1-156"><a href="#cb1-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a>![Final P&amp;L distribution versus informed share for the naive</span>
+<span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a>maker.](figures/informed_share_sweep.png)</span>
+<span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a><span class="fu">### Strategies that listen</span></span>
+<span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a>Two upgrades were implemented and raced on identical market conditions:</span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Inventory-aware**: quote centre $= 10.5 - \kappa \times$ inventory.</span>
+<span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a>  Position control with no learning.</span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Bayesian**: a discrete posterior over $V$, updated after *every* event</span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a>  using the game's known structure. The likelihoods are, for candidate value</span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a>  $v$ and quotes $(\text{bid}, \text{ask})$:</span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>P(\text{buy} \mid v) &amp;= \tfrac{1-\phi}{2} + \phi\,\Pr(v + \varepsilon &gt; \text{ask}) <span class="sc">\\</span></span>
+<span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a>P(\text{sell} \mid v) &amp;= \tfrac{1-\phi}{2} + \phi\,\Pr(v + \varepsilon &lt; \text{bid}) <span class="sc">\\</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>P(\text{pass} \mid v) &amp;= \phi\,\Pr(\text{bid} \le v + \varepsilon \le \text{ask})</span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>  Noise traders never pass, so a pass is *pure signal* that $V$ lies inside</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>  the spread --- an observation with no analogue in fill-only models, and one</span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a>  the convergence figure shows the maker exploiting.</span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a>Tournament results (1,500 games per point):</span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Informed share <span class="pp">|</span> Naive <span class="pp">|</span> Inventory-aware <span class="pp">|</span> Bayesian <span class="pp">|</span></span>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a><span class="pp">|---:|---:|---:|---:|</span></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 0% <span class="pp">|</span> 98.0 <span class="pp">|</span> 98.4 <span class="pp">|</span> 98.6 <span class="pp">|</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 30% <span class="pp">|</span> 27.3 <span class="pp">|</span> 60.2 <span class="pp">|</span> 68.2 <span class="pp">|</span></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 60% <span class="pp">|</span> **-46.2** | 41.0 | **48.4** <span class="pp">|</span></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a>The same flow that bleeds the naive maker *funds* the Bayesian one with</span>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a>information.</span>
+<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a>![Strategy tournament: adaptive quoting neutralises adverse</span>
+<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a>selection.](figures/strategy_tournament.png)</span>
+<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a>![The Bayesian maker's posterior mean homing in on $V=3$ from the flow</span>
+<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a>alone.](figures/bayesian_convergence.png)</span>
+<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="fu">## Section 3: A reinforcement-learning market maker</span></span>
+<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="fu">### Problem formulation</span></span>
+<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a>The scientific question: can a model-free agent, denied the game's structure</span>
+<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a>($\phi$, $\sigma$, even the existence of informed traders), learn a quoting</span>
+<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a>policy from experience? Because $V$ is hidden, the problem is a **partially</span>
+<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a>observable MDP**; the theoretically sufficient state is the belief</span>
+<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a>distribution over $V$, which is exactly what the Bayesian maker tracks. The</span>
+<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a>agent is instead given a deliberately crude, hand-crafted summary of history:</span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**flow imbalance** (buys minus sells so far) --- the human player's</span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a>   "which side keeps getting hit" signal;</span>
+<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**quote-centre offset** from the prior --- without which imbalance is</span>
+<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a>   uninterpretable, since it cannot be known whether the imbalance has</span>
+<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a>   already been responded to;</span>
+<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**inventory** --- settlement risk;</span>
+<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**a coarse game clock** --- early rounds reward information gathering,</span>
+<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a>   late rounds punish open positions.</span>
+<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a>Each feature is discretised (bins $7 \times 7 \times 5 \times 3$), and the</span>
+<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a>action space is five discrete quote-centre moves</span>
+<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a>$<span class="sc">\{</span>-1.0, -0.5, 0, +0.5, +1.0<span class="sc">\}</span>$ at a fixed $\pm 1.0$ spread. The reward is</span>
+<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a>the per-fill mispricing ($\text{ask} - V$ on a sale, $V - \text{bid}$ on a</span>
+<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a>purchase), which telescopes exactly to the settled P&amp;L --- a property pinned</span>
+<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a>by a unit test. $V$ appears in the reward *computation* during training but</span>
+<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a>never in the observation: the standard training-signal/input distinction.</span>
+<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a><span class="fu">### Algorithm</span></span>
+<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a>Tabular Q-learning <span class="co">[</span><span class="ot">Watkins, 1989</span><span class="co">]</span>: maintain $Q(s,a)$, and after each</span>
+<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a>transition $(s, a, r, s')$ update</span>
+<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a>Q(s,a) \leftarrow Q(s,a) + \alpha\left<span class="co">[</span><span class="ot">r + \gamma \max_{a'} Q(s',a') - Q(s,a)\right</span><span class="co">]</span>,</span>
+<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a>with $\gamma = 1$ (episodic task, monetary reward), $\varepsilon$-greedy</span>
+<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a>exploration decaying $1.0 \to 0.05$ over 60% of training, and terminal states</span>
+<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a>bootstrapping zero. Q-learning is off-policy: the update targets the greedy</span>
+<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a>policy's value even while behaviour is exploratory.</span>
+<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a>Evaluation discipline was enforced throughout: greedy-policy evaluation on</span>
+<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a>held-out seed blocks disjoint from training seeds; **best-checkpoint</span>
+<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a>selection** (motivated below); and final reporting on a third seed block</span>
+<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a>untouched by either training or selection.</span>
+<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a><span class="fu">### Results</span></span>
+<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a>A first 20,000-episode run with constant $\alpha = 0.1$ exhibited the</span>
+<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a>characteristic instability of tabular Q-learning: evaluation oscillated</span>
+<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a>between $\approx 48$ and $\approx 18$, and the final-episode snapshot happened</span>
+<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a>to score 20.7 --- a bad snapshot of a decent agent. Halving $\alpha$ and</span>
+<span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a>keeping the best evaluated checkpoint produced a stable plateau and a final</span>
+<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a>score of **49.2 over 1,000 fresh held-out games**, against a hold-still</span>
+<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a>benchmark of $\approx 29$ and the Bayesian ceiling of $\approx 68$: roughly</span>
+<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a>half the naive-to-Bayesian gap recovered from four coarse features. State</span>
+<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a>coverage was 29% of bins; most extreme feature combinations are unreachable</span>
+<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a>in 100-round games.</span>
+<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a>![Learning curve: evaluation P&amp;L versus training episodes, with naive and</span>
+<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a>Bayesian benchmarks.](figures/rl_learning_curve.png)</span>
+<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a>Entered in the tournament via a thin adapter (the frozen table wrapped in the</span>
+<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a>MarketMaker interface, reconstructing its observation from its own fill</span>
+<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a>stream), and noting the agent was trained *only* at $\phi = 0.3$:</span>
+<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-266"><a href="#cb1-266" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Informed share <span class="pp">|</span> Naive <span class="pp">|</span> Inventory-aware <span class="pp">|</span> Bayesian <span class="pp">|</span> RL (tabular Q) <span class="pp">|</span></span>
+<span id="cb1-267"><a href="#cb1-267" aria-hidden="true" tabindex="-1"></a><span class="pp">|---:|---:|---:|---:|---:|</span></span>
+<span id="cb1-268"><a href="#cb1-268" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 0% <span class="pp">|</span> 98.0 <span class="pp">|</span> 98.4 <span class="pp">|</span> 98.6 <span class="pp">|</span> 97.9 <span class="pp">|</span></span>
+<span id="cb1-269"><a href="#cb1-269" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 30% <span class="pp">|</span> 27.3 <span class="pp">|</span> 60.2 <span class="pp">|</span> 68.2 <span class="pp">|</span> 50.7 <span class="pp">|</span></span>
+<span id="cb1-270"><a href="#cb1-270" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> 60% <span class="pp">|</span> -46.2 <span class="pp">|</span> 41.0 <span class="pp">|</span> 48.4 <span class="pp">|</span> 15.3 <span class="pp">|</span></span>
+<span id="cb1-271"><a href="#cb1-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-272"><a href="#cb1-272" aria-hidden="true" tabindex="-1"></a>The agent beats the naive maker everywhere and remains profitable at 60%</span>
+<span id="cb1-273"><a href="#cb1-273" aria-hidden="true" tabindex="-1"></a>informed flow, where the naive maker loses heavily. It does **not** overtake</span>
+<span id="cb1-274"><a href="#cb1-274" aria-hidden="true" tabindex="-1"></a>the hand-designed inventory-aware heuristic: at this scale of state space and</span>
+<span id="cb1-275"><a href="#cb1-275" aria-hidden="true" tabindex="-1"></a>training budget, a good inductive bias is hard to out-learn. Its</span>
+<span id="cb1-276"><a href="#cb1-276" aria-hidden="true" tabindex="-1"></a>out-of-distribution decay (trained at 30%, weaker at the extremes) is visible</span>
+<span id="cb1-277"><a href="#cb1-277" aria-hidden="true" tabindex="-1"></a>and expected.</span>
+<span id="cb1-278"><a href="#cb1-278" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-279"><a href="#cb1-279" aria-hidden="true" tabindex="-1"></a><span class="fu">## Discussion and limitations</span></span>
+<span id="cb1-280"><a href="#cb1-280" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-281"><a href="#cb1-281" aria-hidden="true" tabindex="-1"></a>Three threads tie the sections together. First, *information asymmetry has a</span>
+<span id="cb1-282"><a href="#cb1-282" aria-hidden="true" tabindex="-1"></a>price and a location*: in the betting studies it appears as the cost of</span>
+<span id="cb1-283"><a href="#cb1-283" aria-hidden="true" tabindex="-1"></a>acting on estimates as if they were truths; in market making it appears as</span>
+<span id="cb1-284"><a href="#cb1-284" aria-hidden="true" tabindex="-1"></a>adverse selection. Second, *the asymmetry of losses dictates conservatism*:</span>
+<span id="cb1-285"><a href="#cb1-285" aria-hidden="true" tabindex="-1"></a>the concavity of log-growth and the one-sidedness of informed flow both mean</span>
+<span id="cb1-286"><a href="#cb1-286" aria-hidden="true" tabindex="-1"></a>errors are not symmetric, so optimal behaviour backs away from the</span>
+<span id="cb1-287"><a href="#cb1-287" aria-hidden="true" tabindex="-1"></a>frictionless optimum. Third, *listening is worth money*: the gap between the</span>
+<span id="cb1-288"><a href="#cb1-288" aria-hidden="true" tabindex="-1"></a>naive and Bayesian makers, and the RL agent's ability to close half of it</span>
+<span id="cb1-289"><a href="#cb1-289" aria-hidden="true" tabindex="-1"></a>from crude features, are both measurements of the value of information in the</span>
+<span id="cb1-290"><a href="#cb1-290" aria-hidden="true" tabindex="-1"></a>order flow.</span>
+<span id="cb1-291"><a href="#cb1-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-292"><a href="#cb1-292" aria-hidden="true" tabindex="-1"></a>Limitations, stated plainly: the game is stationary within an episode (no</span>
+<span id="cb1-293"><a href="#cb1-293" aria-hidden="true" tabindex="-1"></a>news, no drifting $V$); trader arrival is one-per-round with unit size; the</span>
+<span id="cb1-294"><a href="#cb1-294" aria-hidden="true" tabindex="-1"></a>Bayesian maker is given the true $\phi$ and $\sigma$, making its benchmark a</span>
+<span id="cb1-295"><a href="#cb1-295" aria-hidden="true" tabindex="-1"></a>ceiling rather than a fair competitor; the RL agent's features are</span>
+<span id="cb1-296"><a href="#cb1-296" aria-hidden="true" tabindex="-1"></a>hand-crafted, its discretisation coarse, and it was trained at a single</span>
+<span id="cb1-297"><a href="#cb1-297" aria-hidden="true" tabindex="-1"></a>informed share. The betting studies assume binary independent bets;</span>
+<span id="cb1-298"><a href="#cb1-298" aria-hidden="true" tabindex="-1"></a>correlated simultaneous bets (portfolio Kelly) remain on the roadmap.</span>
+<span id="cb1-299"><a href="#cb1-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-300"><a href="#cb1-300" aria-hidden="true" tabindex="-1"></a><span class="fu">## Future work</span></span>
+<span id="cb1-301"><a href="#cb1-301" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-302"><a href="#cb1-302" aria-hidden="true" tabindex="-1"></a>Policy inspection (heatmaps of the learned greedy action over</span>
+<span id="cb1-303"><a href="#cb1-303" aria-hidden="true" tabindex="-1"></a>imbalance-by-centre slices, compared with the Bayesian maker's behaviour);</span>
+<span id="cb1-304"><a href="#cb1-304" aria-hidden="true" tabindex="-1"></a>ablations (sparse versus dense reward; removing the flow-imbalance feature,</span>
+<span id="cb1-305"><a href="#cb1-305" aria-hidden="true" tabindex="-1"></a>which should collapse the agent to inventory management); a DQN on the</span>
+<span id="cb1-306"><a href="#cb1-306" aria-hidden="true" tabindex="-1"></a>identical environment via stable-baselines3, relaxing the discretisation; an</span>
+<span id="cb1-307"><a href="#cb1-307" aria-hidden="true" tabindex="-1"></a>adaptive Bayesian maker that infers $\phi$ online; and the portfolio Kelly</span>
+<span id="cb1-308"><a href="#cb1-308" aria-hidden="true" tabindex="-1"></a>extension connecting Section 1 to multi-asset allocation.</span>
+<span id="cb1-309"><a href="#cb1-309" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-310"><a href="#cb1-310" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reproducibility</span></span>
+<span id="cb1-311"><a href="#cb1-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-312"><a href="#cb1-312" aria-hidden="true" tabindex="-1"></a>All experiments are seeded scripts in <span class="in">`scripts/`</span>; all figures in this</span>
+<span id="cb1-313"><a href="#cb1-313" aria-hidden="true" tabindex="-1"></a>document are their direct outputs. The full test suite (40 tests) runs with</span>
+<span id="cb1-314"><a href="#cb1-314" aria-hidden="true" tabindex="-1"></a><span class="in">`python -m pytest`</span>. Code: <span class="in">`github.com/jacksonfraser-aero/kelly-betting-simulator`</span>.</span>
+<span id="cb1-315"><a href="#cb1-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-316"><a href="#cb1-316" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb1-317"><a href="#cb1-317" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-318"><a href="#cb1-318" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Kelly, J. L. (1956). *A New Interpretation of Information Rate.* Bell</span>
+<span id="cb1-319"><a href="#cb1-319" aria-hidden="true" tabindex="-1"></a>  System Technical Journal.</span>
+<span id="cb1-320"><a href="#cb1-320" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Thorp, E. O. (2006). *The Kelly Criterion in Blackjack, Sports Betting,</span>
+<span id="cb1-321"><a href="#cb1-321" aria-hidden="true" tabindex="-1"></a>  and the Stock Market.*</span>
+<span id="cb1-322"><a href="#cb1-322" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>MacLean, L., Thorp, E. O., &amp; Ziemba, W. (2011). *The Kelly Capital Growth</span>
+<span id="cb1-323"><a href="#cb1-323" aria-hidden="true" tabindex="-1"></a>  Investment Criterion.* World Scientific.</span>
+<span id="cb1-324"><a href="#cb1-324" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Glosten, L., &amp; Milgrom, P. (1985). *Bid, Ask and Transaction Prices in a</span>
+<span id="cb1-325"><a href="#cb1-325" aria-hidden="true" tabindex="-1"></a>  Specialist Market with Heterogeneously Informed Traders.* Journal of</span>
+<span id="cb1-326"><a href="#cb1-326" aria-hidden="true" tabindex="-1"></a>  Financial Economics.</span>
+<span id="cb1-327"><a href="#cb1-327" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Watkins, C. (1989). *Learning from Delayed Rewards.* PhD thesis, Cambridge.</span>
+<span id="cb1-328"><a href="#cb1-328" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Sutton, R., &amp; Barto, A. (2018). *Reinforcement Learning: An Introduction*</span>
+<span id="cb1-329"><a href="#cb1-329" aria-hidden="true" tabindex="-1"></a>  (2nd ed.). MIT Press.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

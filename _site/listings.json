@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/kelly-criterion/index.html",
       "/posts/golf-weather-model/index.html"
     ]
   }

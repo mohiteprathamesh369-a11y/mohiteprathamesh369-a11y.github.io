@@ -13,5 +13,9 @@
   },
   "posts/golf-weather-model/index.qmd": {
     "index.html": "5b5cba83"
+  },
+  "posts/kelly-criterion/index.qmd": {
+    "index.html": "0bac2874",
+    "index.tex": "cbb2ef65"
   }
 }

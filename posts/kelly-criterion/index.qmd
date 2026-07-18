@@ -1,19 +1,8 @@
 ---
-title: "Bet Sizing and Market Making Under Uncertainty"
-subtitle: "Kelly criterion studies, adverse selection, and a reinforcement-learning market maker"
-author: "Jackson Fraser"
+title: "How Much Should You Bet? The Kelly Criterion, Simulated"
 date: 2026-07-18
-format:
-  html:
-    toc: true
-    toc-depth: 3
-    number-sections: true
-    code-fold: true
-    theme: cosmo
-  pdf:
-    toc: true
-    number-sections: true
-bibliography: false
+categories: [python, simulation, betting]
+description: "Monte Carlo simulation of bankroll growth, risk of ruin, and why practitioners bet less than the maths says."
 ---
 
 ## Abstract {.unnumbered}
