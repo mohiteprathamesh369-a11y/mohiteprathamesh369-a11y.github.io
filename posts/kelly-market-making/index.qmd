@@ -54,11 +54,11 @@ $$
 Maximising $g$ yields the Kelly fraction
 
 $$
-f^\* = \frac{bp - q}{b},
+f^* = \frac{bp - q}{b},
 $$
 
 which for the study's canonical bet ($p = 0.55$, even odds $b = 1$) gives
-$f^\* = 0.10$.
+$f^* = 0.10$.
 
 Simulating 20,000 bankroll paths over 1,000 bets:
 
@@ -88,7 +88,7 @@ scale).](figures/bankroll_paths.png)
 
 Real bettors estimate $p$. The study models a bettor who observes $n$
 historical outcomes, forms the sample win rate $\hat p$, and bets
-$m \times f^\*(\hat p)$ --- a *Kelly multiplier* $m$ applied to the Kelly
+$m \times f^*(\hat p)$ --- a *Kelly multiplier* $m$ applied to the Kelly
 fraction of the estimate --- against the true $p$.
 
 **Noise.** Sweeping $m$ for several history lengths, the growth-maximising
