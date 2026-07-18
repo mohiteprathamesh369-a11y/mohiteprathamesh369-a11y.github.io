@@ -7,27 +7,6 @@
     "text": "I’m an Aeronautical Engineering student at the University of Glasgow (BEng Hons, 2028), interested in quantitative finance and markets. I write here about my projects — mostly statistics, simulation, and decision-making under uncertainty.\nCurrently: Kelly-criterion betting simulator exploring reinforcement learning\nGitHub · LinkedIn"
   },
   {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Jackson Fraser",
-    "section": "",
-    "text": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality\n\n\nBuilding a weather-to-revenue model for a links golf course — and why the obvious answer is confounded.\n\n\n\n\n\nJul 18, 2026\n\n6 min\n\n\n\n\nNo matching items"
-  },
-  {
     "objectID": "posts/golf-weather-model/index.html",
     "href": "posts/golf-weather-model/index.html",
     "title": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality",
@@ -40,48 +19,6 @@
     "title": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality",
     "section": "",
     "text": "I work in golf operations at a links course in Scotland. Links golf is played on exposed coastal ground, and the operational folklore is unanimous: wind is the demand killer. Pricing conversations, discounting decisions, and staffing assumptions all lean on that belief.\nI wanted to know whether the data agrees — and it turns out the honest answer requires being careful about seasonality, because wet, windy days cluster in exactly the months when nobody plays golf anyway.\nData transparency: the weather data below is real (Open-Meteo historical archive, St Andrews). The booking data is simulated — calibrated using my experience working in golf operations, with illustrative prices and capacities. The methodology mirrors a private analysis I ran on ~6 months of real daily operations data that I collected myself; that dataset isn’t published because it belongs to my employer. Everything below is fully reproducible.\n\n\nshow code\nimport requests\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nimport statsmodels.formula.api as smf"
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#the-data",
-    "href": "posts/golf-weather-model/index.html#the-data",
-    "title": "What Actually Drives Golf Demand: A 186-Day Regression Study",
-    "section": "The data",
-    "text": "The data\n\n186 consecutive days of daily rounds played (anonymised — I’m not publishing my employer’s revenue figures)\nDaily weather: rainfall (mm), mean and max wind speed, temperature\nCalendar controls: day of week, month, school holidays\n\nOne honest caveat up front: this is observational data from a single course over a single season. It can identify associations, not prove causation, and the seasonal controls do a lot of work."
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#why-you-cant-just-regress-rounds-on-wind",
-    "href": "posts/golf-weather-model/index.html#why-you-cant-just-regress-rounds-on-wind",
-    "title": "What Actually Drives Golf Demand: A 186-Day Regression Study",
-    "section": "Why you can’t just regress rounds on wind",
-    "text": "Why you can’t just regress rounds on wind\nThe naive approach — rounds against wind speed — gives you a big scary coefficient. It’s also wrong, because it’s confounded by seasonality: windy days cluster in the shoulder months, which are also colder, darker, and outside peak tourist season. Wind gets credit for damage that the calendar is doing.\nSo the model controls for seasonality and day-of-week effects before asking what weather adds on the margin.\n\n# model specification with statsmodels\n# X = seasonal controls + rainfall + wind + temperature\n# model = sm.OLS(...).fit()\n# model.summary()"
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#results",
-    "href": "posts/golf-weather-model/index.html#results",
-    "title": "What Actually Drives Golf Demand: A 186-Day Regression Study",
-    "section": "Results",
-    "text": "Results\nThe model explains 59% of daily demand variance. Two findings mattered:\nRainfall is the real driver. Each additional millimetre of rain reduces volume by about 1.9 rounds, statistically significant and robust across specifications.\nWind has no independent effect. Once seasonality is controlled for, the wind coefficient is indistinguishable from zero. The folklore was a confounding story: wind correlates with low demand because both correlate with time of year.\n\n# coefficient plot / results table"
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#why-this-matters-commercially",
-    "href": "posts/golf-weather-model/index.html#why-this-matters-commercially",
-    "title": "What Actually Drives Golf Demand: A 186-Day Regression Study",
-    "section": "Why this matters commercially",
-    "text": "Why this matters commercially\nIf you believe wind kills demand, you discount windy days — and many of those discounts are given away on days that would have filled anyway. The model’s practical output is simple: price against the rain forecast, not the wind forecast."
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#what-id-do-differently",
-    "href": "posts/golf-weather-model/index.html#what-id-do-differently",
-    "title": "What Actually Drives Golf Demand: A 186-Day Regression Study",
-    "section": "What I’d do differently",
-    "text": "What I’d do differently\n\nMore seasons of data — one season can’t fully separate weather from calendar effects\nBooking lead-time data, to distinguish “demand fell” from “cancellations rose”\nA forecast-based version: bookings respond to the forecast days ahead, not the weather that actually arrives"
-  },
-  {
-    "objectID": "posts/golf-weather-model/index.html#what-building-this-taught-me",
-    "href": "posts/golf-weather-model/index.html#what-building-this-taught-me",
-    "title": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality",
-    "section": "What building this taught me",
-    "text": "What building this taught me\nThe regression is the easy part. The judgement calls are the parts nobody teaches: recognising that the raw correlations are confounded, choosing a specification that matches the mechanism you’re testing, and reading the diagnostics honestly instead of stopping at a big R². And the most useful finding — in the prxivate version of this analysis — was a null result: the variable everyone believed in did nothing once you controlled for the calendar."
   },
   {
     "objectID": "posts/golf-weather-model/index.html#weather-data",
@@ -124,5 +61,19 @@
     "title": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality",
     "section": "Model validation",
     "text": "Model validation\n\n\nshow code\nfig, ax = plt.subplots(1, 2, figsize=(12, 4))\n\nax[0].scatter(model.fittedvalues, model.resid, alpha=0.3)\nax[0].axhline(0, color=\"red\", lw=1)\nax[0].set_xlabel(\"Fitted values\")\nax[0].set_ylabel(\"Residual\")\nax[0].set_title(\"Residuals vs fitted\")\n\nax[1].plot(df[\"time\"], model.resid, lw=0.6)\nax[1].axhline(0, color=\"red\", lw=1)\nax[1].set_title(\"Residuals over time\")\nplt.tight_layout()\n\n\n\n\n\n\n\n\n\nTwo things worth noticing. The residuals form a shapeless cloud around zero — roughly constant variance. But the Durbin–Watson statistic (~1.3) indicates positive autocorrelation: residuals on consecutive days share the same sign. Since the simulation’s noise is independent by construction, that autocorrelation is model misspecification — the month dummies approximate a smooth seasonal curve in steps, leaving slow-moving structure behind. A useful illustration of Durbin–Watson detecting unmodelled structure rather than noisy data.\nThere’s also a diagonal streak in the bottom-left of the residuals-vs-fitted plot: days where the model predicts negative rounds. Demand is censored at zero while a linear model is unbounded, so residuals land exactly on the line residual = −fitted. With many zero-demand days, a censored (Tobit) model would be more appropriate; here it’s confined to a handful of extreme winter days."
+  },
+  {
+    "objectID": "posts/golf-weather-model/index.html#what-building-this-taught-me",
+    "href": "posts/golf-weather-model/index.html#what-building-this-taught-me",
+    "title": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality",
+    "section": "What building this taught me",
+    "text": "What building this taught me\nThe regression is the easy part. The judgement calls are the parts nobody teaches: recognising that the raw correlations are confounded, choosing a specification that matches the mechanism you’re testing, and reading the diagnostics honestly instead of stopping at a big R². And the most useful finding — in the prxivate version of this analysis — was a null result: the variable everyone believed in did nothing once you controlled for the calendar."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Jackson Fraser",
+    "section": "",
+    "text": "Does Wind Really Kill Golf Demand? Separating Weather from Seasonality\n\n\nBuilding a weather-to-revenue model for a links golf course — and why the obvious answer is confounded.\n\n\n\n\n\nJul 18, 2026\n\n6 min\n\n\n\n\nNo matching items"
   }
 ]
